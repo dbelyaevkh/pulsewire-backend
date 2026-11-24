@@ -124,6 +124,21 @@ npm run build && node dist/main.js --host=127.0.0.1 --port=4000 --app-name=pulse
 
 With the settings from `.env.example`, the server listens at <http://127.0.0.1:3000>. The CLI example uses port `4000`.
 
+### API documentation
+
+After starting the application, open [Swagger UI](http://127.0.0.1:3000/swagger) or download the [OpenAPI JSON](http://127.0.0.1:3000/swagger/openapi.json).
+
+### Postman
+
+1. In Postman, import [the Pulsewire API collection](postman/PulsewireAPI.postman_collection.json).
+2. Open the collection's **Variables** tab and set `baseUrl` to
+   `http://127.0.0.1:3000` without a trailing slash.
+3. With the application running, send `GET {{baseUrl}}/health`.
+
+To target a different server or port, change `baseUrl` in the collection.
+For multiple servers, you can set `baseUrl` in each Postman environment and select
+the environment you want to use. Keep tokens and passwords out of committed exports.
+
 ### PostgreSQL migrations
 
 The migration command reads `POSTGRES_DSN` from the environment or `.env`. No migrations are registered yet.
