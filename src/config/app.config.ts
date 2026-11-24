@@ -8,10 +8,37 @@ const portSchema = z
     .pipe(z.coerce.number<string>().int().min(1).max(65535))
     .default(3000);
 
+export const postgresDsnSchema = z
+    .url({
+        protocol: /^postgres(?:ql)?$/,
+    })
+    .superRefine((dsn, ctx) => {
+        if (!URL.canParse(dsn)) {
+            return;
+        }
+
+        const url = new URL(dsn);
+
+        if (!url.hostname) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'POSTGRES_DSN must contain a hostname',
+            });
+        }
+
+        if (url.pathname.length <= 1) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'POSTGRES_DSN must contain a database name',
+            });
+        }
+    });
+
 const envSchema = z.object({
     APP_NAME: z.string(),
     HOST: z.hostname(),
     PORT: portSchema,
+    POSTGRES_DSN: postgresDsnSchema,
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
