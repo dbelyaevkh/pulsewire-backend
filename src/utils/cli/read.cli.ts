@@ -16,6 +16,9 @@ export function readCli(argv: string[]): Record<string, string> {
             'postgres-dsn': {
                 type: 'string',
             },
+            'mongo-dsn': {
+                type: 'string',
+            },
         },
         strict: true,
         allowPositionals: false,
@@ -26,6 +29,7 @@ export function readCli(argv: string[]): Record<string, string> {
         HOST: values.host as string | undefined,
         PORT: values.port as string | undefined,
         POSTGRES_DSN: values['postgres-dsn'] as string | undefined,
+        MONGO_DSN: values['mongo-dsn'] as string | undefined,
     };
 
     return Object.fromEntries(

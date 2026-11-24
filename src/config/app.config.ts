@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import { readCli } from '../utils/cli/read.cli.js';
 import { AppConfigError } from './errors/app-config.error.js';
 
@@ -34,11 +35,38 @@ export const postgresDsnSchema = z
         }
     });
 
+const mongoDsnSchema = z
+    .string()
+    .trim()
+    .min(1, 'MONGO_DSN is required')
+    .superRefine((dsn, ctx) => {
+        try {
+            new mongoose.mongo.MongoClient(dsn);
+        } catch {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'MONGO_DSN must be a valid MongoDB connection string',
+            });
+            return;
+        }
+
+        const hasDatabaseName =
+            /^mongodb(?:\+srv)?:\/\/[^/?#]+\/[^/?#]+(?=[?#]|$)/.test(dsn);
+
+        if (!hasDatabaseName) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'MONGO_DSN must contain a database name',
+            });
+        }
+    });
+
 const envSchema = z.object({
     APP_NAME: z.string(),
     HOST: z.hostname(),
     PORT: portSchema,
     POSTGRES_DSN: postgresDsnSchema,
+    MONGO_DSN: mongoDsnSchema,
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
