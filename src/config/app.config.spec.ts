@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { loadConfig } from './app.config.js';
 import { AppConfigError } from './errors/app-config.error.js';
 
-const BASE_CONFIG = { APP_NAME: 'Test', HOST: '127.0.0.1', PORT: '3000' };
+const BASE_CONFIG = {
+    APP_NAME: 'Test',
+    HOST: '127.0.0.1',
+    PORT: '3000',
+    POSTGRES_DSN: 'postgresql://user:password@localhost:5432/pulsewire',
+};
 
 describe('loadConfig', () => {
     describe('valid config', () => {
@@ -13,6 +18,8 @@ describe('loadConfig', () => {
                 APP_NAME: 'Test',
                 HOST: '127.0.0.1',
                 PORT: 3000,
+                POSTGRES_DSN:
+                    'postgresql://user:password@localhost:5432/pulsewire',
             });
 
             expect(typeof result.PORT).toBe('number');
@@ -30,10 +37,11 @@ describe('loadConfig', () => {
 
     describe('PORT', () => {
         it('uses 3000 when PORT and --port are absent', () => {
-            const configWithoutPort = {
-                APP_NAME: 'Test',
-                HOST: '127.0.0.1',
+            const configWithoutPort: Partial<typeof BASE_CONFIG> = {
+                ...BASE_CONFIG,
             };
+
+            delete configWithoutPort.PORT;
 
             const result = loadConfig(configWithoutPort, []);
 
@@ -78,6 +86,58 @@ describe('loadConfig', () => {
 
         it('rejects invalid CLI port even when environment port is valid', () => {
             const act = () => loadConfig(BASE_CONFIG, ['--port', 'abc']);
+
+            expect(act).toThrow(AppConfigError);
+        });
+
+        it('overrides PostgreSQL DSN with --postgres-dsn', () => {
+            const result = loadConfig(BASE_CONFIG, [
+                '--postgres-dsn',
+                'postgres://user:password@localhost:5432/pulsewire',
+            ]);
+
+            expect(result.POSTGRES_DSN).toBe(
+                'postgres://user:password@localhost:5432/pulsewire',
+            );
+        });
+    });
+
+    describe('PostgreSQL DSN', () => {
+        it.each([
+            'postgres://user:password@localhost:5432/pulsewire',
+            'postgresql://user:password@localhost:5432/pulsewire',
+        ])('accepts PostgreSQL DSN', (dsn) => {
+            const result = loadConfig(
+                { ...BASE_CONFIG, POSTGRES_DSN: dsn },
+                [],
+            );
+
+            expect(result.POSTGRES_DSN).toBe(dsn);
+        });
+
+        it('rejects config without POSTGRES_DSN', () => {
+            const config: Partial<typeof BASE_CONFIG> = { ...BASE_CONFIG };
+
+            delete config.POSTGRES_DSN;
+
+            const act = () => loadConfig(config, []);
+
+            expect(act).toThrow(AppConfigError);
+        });
+
+        it.each([
+            'https://localhost/pulsewire',
+            'mysql://localhost/pulsewire',
+            'not-a-url',
+            'postgresql:foo',
+            'postgresql://',
+            'postgresql://localhost',
+            'postgres:foo',
+            'postgres://',
+            'postgres://localhost',
+        ])('rejects invalid PostgreSQL DSN', (dsn) => {
+            const act = () =>
+                loadConfig({ ...BASE_CONFIG, POSTGRES_DSN: dsn }, []);
 
             expect(act).toThrow(AppConfigError);
         });

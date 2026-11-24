@@ -4,7 +4,7 @@ export function readCli(argv: string[]): Record<string, string> {
     const { values } = parseArgs({
         args: argv,
         options: {
-            appName: {
+            'app-name': {
                 type: 'string',
             },
             host: {
@@ -13,15 +13,19 @@ export function readCli(argv: string[]): Record<string, string> {
             port: {
                 type: 'string',
             },
+            'postgres-dsn': {
+                type: 'string',
+            },
         },
         strict: true,
         allowPositionals: false,
     });
 
     const mapped: Record<string, string | undefined> = {
-        APP_NAME: values.appName as string | undefined,
+        APP_NAME: values['app-name'] as string | undefined,
         HOST: values.host as string | undefined,
         PORT: values.port as string | undefined,
+        POSTGRES_DSN: values['postgres-dsn'] as string | undefined,
     };
 
     return Object.fromEntries(
