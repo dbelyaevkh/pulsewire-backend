@@ -50,6 +50,57 @@ docker volume rm pulsewire-postgres-data
 
 Removing the volume permanently deletes all data stored in the local PostgreSQL database.
 
+### MongoDB
+
+With Docker running, create the local MongoDB container once. Replace `YOUR_PASSWORD` with a local development password.
+
+```sh
+docker run -d \
+    --name pulsewire-mongo \
+    -p 127.0.0.1:27017:27017 \
+    -e MONGO_INITDB_ROOT_USERNAME=pulsewire \
+    -e MONGO_INITDB_ROOT_PASSWORD='YOUR_PASSWORD' \
+    -v pulsewire-mongo-data:/data/db \
+    mongo:8
+```
+
+If the container already exists but is stopped, start it with `docker start pulsewire-mongo` or from Docker Desktop.
+
+Verify that MongoDB is ready to accept connections:
+
+```sh
+docker exec pulsewire-mongo mongosh \
+    --username pulsewire \
+    --password 'YOUR_PASSWORD' \
+    --authenticationDatabase admin \
+    --eval 'db.runCommand({ ping: 1 })'
+```
+
+The command succeeds when its output contains `ok: 1`.
+
+Use the following DSN to connect the application to the local MongoDB container:
+
+```dotenv
+MONGO_DSN=mongodb://pulsewire:YOUR_PASSWORD@127.0.0.1:27017/pulsewire?authSource=admin
+```
+
+The database name is `pulsewire`. The `authSource=admin` parameter is required because the root user created by the MongoDB image is stored in the `admin` database. Percent-encode reserved URL characters in the password, such as `@` as `%40` and `#` as `%23`.
+
+To stop and remove the container:
+
+```sh
+docker stop pulsewire-mongo
+docker rm pulsewire-mongo
+```
+
+To also remove the local MongoDB data and start with a clean database:
+
+```sh
+docker volume rm pulsewire-mongo-data
+```
+
+Removing the volume permanently deletes all data stored in the local MongoDB database. MongoDB migrations and seed data are not configured yet.
+
 ### Start the application
 
 From the repository root, install dependencies and start the development server:
@@ -59,7 +110,7 @@ npm ci
 cp -n .env.example .env
 ```
 
-Edit `.env` and replace `YOUR_PASSWORD` in `POSTGRES_DSN` with the container password. Percent-encode reserved URL characters in the password, such as `@` as `%40` and `#` as `%23`.
+Edit `.env` and replace `YOUR_PASSWORD` in `POSTGRES_DSN` and `MONGO_DSN` with the corresponding container passwords. Percent-encode reserved URL characters in the passwords, such as `@` as `%40` and `#` as `%23`.
 
 ```sh
 npm run start:dev
@@ -68,7 +119,7 @@ npm run start:dev
 Alternatively, build the application and pass its configuration through command-line arguments:
 
 ```sh
-npm run build && node dist/main.js --host=127.0.0.1 --port=4000 --app-name=pulsewire-backend --postgres-dsn=postgresql://pulsewire_app:YOUR_PASSWORD@127.0.0.1:15432/pulsewire
+npm run build && node dist/main.js --host=127.0.0.1 --port=4000 --app-name=pulsewire-backend --postgres-dsn=postgresql://pulsewire_app:YOUR_PASSWORD@127.0.0.1:15432/pulsewire --mongo-dsn='mongodb://pulsewire:YOUR_PASSWORD@127.0.0.1:27017/pulsewire?authSource=admin'
 ```
 
 With the settings from `.env.example`, the server listens at <http://127.0.0.1:3000>. The CLI example uses port `4000`.

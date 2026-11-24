@@ -7,6 +7,8 @@ const BASE_CONFIG = {
     HOST: '127.0.0.1',
     PORT: '3000',
     POSTGRES_DSN: 'postgresql://user:password@localhost:5432/pulsewire',
+    MONGO_DSN:
+        'mongodb://user:password@localhost:27017/pulsewire?authSource=admin',
 };
 
 describe('loadConfig', () => {
@@ -20,6 +22,8 @@ describe('loadConfig', () => {
                 PORT: 3000,
                 POSTGRES_DSN:
                     'postgresql://user:password@localhost:5432/pulsewire',
+                MONGO_DSN:
+                    'mongodb://user:password@localhost:27017/pulsewire?authSource=admin',
             });
 
             expect(typeof result.PORT).toBe('number');
@@ -100,6 +104,17 @@ describe('loadConfig', () => {
                 'postgres://user:password@localhost:5432/pulsewire',
             );
         });
+
+        it('overrides MongoDB DSN with --mongo-dsn', () => {
+            const result = loadConfig(BASE_CONFIG, [
+                '--mongo-dsn',
+                'mongodb://user:password@localhost:27017/pulsewire-cli?authSource=admin',
+            ]);
+
+            expect(result.MONGO_DSN).toBe(
+                'mongodb://user:password@localhost:27017/pulsewire-cli?authSource=admin',
+            );
+        });
     });
 
     describe('PostgreSQL DSN', () => {
@@ -138,6 +153,48 @@ describe('loadConfig', () => {
         ])('rejects invalid PostgreSQL DSN', (dsn) => {
             const act = () =>
                 loadConfig({ ...BASE_CONFIG, POSTGRES_DSN: dsn }, []);
+
+            expect(act).toThrow(AppConfigError);
+        });
+    });
+
+    describe('MongoDB DSN', () => {
+        it.each([
+            'mongodb://localhost:27017/pulsewire',
+            'mongodb://user:password@localhost:27017/pulsewire',
+            'mongodb://user:password@localhost:27017/pulsewire?authSource=admin',
+            'mongodb+srv://user:password@cluster.example.com/pulsewire',
+        ])('accepts MongoDB DSN: %s', (dsn) => {
+            const result = loadConfig({ ...BASE_CONFIG, MONGO_DSN: dsn }, []);
+
+            expect(result.MONGO_DSN).toBe(dsn);
+        });
+
+        it('rejects config without MONGO_DSN', () => {
+            const config: Partial<typeof BASE_CONFIG> = { ...BASE_CONFIG };
+
+            delete config.MONGO_DSN;
+
+            const act = () => loadConfig(config, []);
+
+            expect(act).toThrow(AppConfigError);
+        });
+
+        it.each([
+            'https://localhost/pulsewire',
+            'mysql://localhost/pulsewire',
+            'postgresql://localhost/pulsewire',
+            'foomongodb://localhost/pulsewire',
+            'not-a-url',
+            'mongodb:foo',
+            'mongodb://',
+            'mongodb://localhost',
+            'mongodb+srv:foo',
+            'mongodb+srv://',
+            'mongodb+srv://localhost',
+        ])('rejects invalid MongoDB DSN: %s', (dsn) => {
+            const act = () =>
+                loadConfig({ ...BASE_CONFIG, MONGO_DSN: dsn }, []);
 
             expect(act).toThrow(AppConfigError);
         });

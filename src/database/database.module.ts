@@ -4,6 +4,8 @@ import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import type { AppConfig } from '../config/app.config.js';
 import { makePostgresOptions } from './postgres/database.options.js';
+import { MongooseModule } from '@nestjs/mongoose';
+import type { MongooseModuleFactoryOptions } from '@nestjs/mongoose';
 
 @Module({
     imports: [
@@ -18,6 +20,16 @@ import { makePostgresOptions } from './postgres/database.options.js';
                 autoLoadEntities: true,
                 retryAttempts: 3,
                 retryDelay: 1000,
+            }),
+            inject: [ConfigService],
+        }),
+
+        MongooseModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: (
+                configService: ConfigService,
+            ): MongooseModuleFactoryOptions => ({
+                uri: configService.getOrThrow<string>('MONGO_DSN'),
             }),
             inject: [ConfigService],
         }),
