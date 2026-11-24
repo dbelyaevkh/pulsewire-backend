@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import type { INestApplication } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { ConfigService } from '@nestjs/config';
 import { AppConfig } from './config/app.config.js';
@@ -11,6 +12,20 @@ async function bootstrap() {
     try {
         app = await NestFactory.create(AppModule, {
             abortOnError: false,
+        });
+
+        const swaggerConfig = new DocumentBuilder()
+            .setTitle('Pulsewire API')
+            .setDescription('Pulsewire backend API')
+            .setVersion('0.0.1')
+            .build();
+
+        const documentFactory = () =>
+            SwaggerModule.createDocument(app!, swaggerConfig);
+
+        SwaggerModule.setup('swagger', app, documentFactory, {
+            jsonDocumentUrl: 'swagger/openapi.json',
+            swaggerOptions: { persistAuthorization: true },
         });
 
         const configService =
