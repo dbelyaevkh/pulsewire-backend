@@ -1,8 +1,44 @@
 import { NestFactory } from '@nestjs/core';
+import type { INestApplication } from '@nestjs/common';
 import { AppModule } from './app.module.js';
+import { ConfigService } from '@nestjs/config';
+import { AppConfig } from './config/app.config.js';
+import { AppConfigError } from './config/errors/app-config.error.js';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
-    await app.listen(process.env.PORT ?? 3000);
+    let app: INestApplication | undefined;
+
+    try {
+        app = await NestFactory.create(AppModule, {
+            abortOnError: false,
+        });
+
+        const configService =
+            app.get<ConfigService<AppConfig, true>>(ConfigService);
+
+        const host: string = configService.getOrThrow('HOST', {
+            infer: true,
+        });
+        const port: number = configService.getOrThrow('PORT', {
+            infer: true,
+        });
+
+        await app.listen(port, host);
+    } catch (error: unknown) {
+        console.error('app.startup_failed');
+
+        if (error instanceof AppConfigError) {
+            console.error(`Invalid config: ${error.details}`);
+        }
+
+        process.exitCode = 1;
+
+        try {
+            await app?.close();
+        } catch {
+            console.error('app.shutdown_failed');
+        }
+    }
 }
+
 await bootstrap();
