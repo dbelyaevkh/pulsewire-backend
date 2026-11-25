@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: 2ffce681-a43f-4721-8fba-2c223ad464c9
+
+localResources:
+  collections:
+    - ../PulsewireAPI
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../PulsewireAPI: 11721020-d0ad3b2e-a48a-4e9c-86bc-ccff2922b854
