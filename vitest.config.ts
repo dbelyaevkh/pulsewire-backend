@@ -5,6 +5,22 @@ export default {
     test: {
         globals: true,
         root: './',
-        include: ['**/*.spec.ts'],
+        projects: [
+            {
+                extends: true,
+                test: {
+                    name: 'unit',
+                    include: ['**/*.spec.ts'],
+                },
+            },
+            {
+                extends: true,
+                test: {
+                    name: 'integration',
+                    include: ['src/**/*.integration.ts'],
+                    globalSetup: ['test/global-setup.ts'],
+                },
+            },
+        ],
     },
 };

@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import type { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { ConfigService } from '@nestjs/config';
@@ -13,6 +13,14 @@ async function bootstrap() {
         app = await NestFactory.create(AppModule, {
             abortOnError: false,
         });
+
+        app.useGlobalPipes(
+            new ValidationPipe({
+                whitelist: true,
+                forbidNonWhitelisted: true,
+                transform: true,
+            }),
+        );
 
         const swaggerConfig = new DocumentBuilder()
             .setTitle('Pulsewire API')

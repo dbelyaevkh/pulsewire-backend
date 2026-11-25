@@ -103,7 +103,7 @@ Removing the volume permanently deletes all data stored in the local MongoDB dat
 
 ### Start the application
 
-From the repository root, install dependencies and start the development server:
+From the repository root, install dependencies and create a local environment file:
 
 ```sh
 npm ci
@@ -111,6 +111,8 @@ cp -n .env.example .env
 ```
 
 Edit `.env` and replace `YOUR_PASSWORD` in `POSTGRES_DSN` and `MONGO_DSN` with the corresponding container passwords. Percent-encode reserved URL characters in the passwords, such as `@` as `%40` and `#` as `%23`.
+
+Apply the [PostgreSQL migrations](#postgresql-migrations) before starting the development server.
 
 ```sh
 npm run start:dev
@@ -141,7 +143,7 @@ the environment you want to use. Keep tokens and passwords out of committed expo
 
 ### PostgreSQL migrations
 
-The migration command reads `POSTGRES_DSN` from the environment or `.env`. No migrations are registered yet.
+The migration command reads `POSTGRES_DSN` from the environment or `.env`. Run the following commands from the repository root to apply pending migrations. The `CreateUsers` migration creates the `users` table and its unique email constraint.
 
 ```sh
 npm run build
@@ -150,27 +152,43 @@ npm exec -- typeorm migration:run -d dist/database/postgres/data-source.js
 
 ### Run tests
 
-Unit tests use [Vitest](https://vitest.dev).
+The [Vitest](https://vitest.dev) configuration defines `unit` and `integration` projects.
 
-Run all unit tests once:
+Run unit tests without a database:
 
 ```sh
-npm test
+npm test -- --project unit
 ```
 
-Run tests in watch mode during development:
+Run unit tests in watch mode:
 
 ```sh
-npm run test:watch
+npm run test:watch -- --project unit
 ```
 
 Run a specific test file:
 
 ```sh
-npm test -- src/config/app.config.spec.ts
+npm test -- --project unit src/config/app.config.spec.ts
 ```
 
-Run tests and generate a coverage report:
+#### PostgreSQL integration tests
+
+Create a dedicated role and database once in the local PostgreSQL container. Enter a test database password when prompted.
+
+```sh
+docker exec -it pulsewire-postgres createuser -U pulsewire_app --pwprompt pulsewire_test_app
+docker exec pulsewire-postgres createdb -U pulsewire_app --owner=pulsewire_test_app pulsewire_test
+cp -n .env.test.example .env.test
+```
+
+In `.env.test`, set `POSTGRES_TEST_DSN` to the connection string for `pulsewire_test`. Replace `YOUR_PASSWORD` with the test role password and percent-encode reserved URL characters. Vitest applies pending PostgreSQL migrations to the test database during integration setup.
+
+```sh
+npm test -- --project integration
+```
+
+With the test database configured, run both projects with `npm test` or generate a combined coverage report:
 
 ```sh
 npm run test:cov
