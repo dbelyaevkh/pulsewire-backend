@@ -132,14 +132,18 @@ After starting the application, open [Swagger UI](http://127.0.0.1:3000/swagger)
 
 ### Postman
 
-1. In Postman, import [the Pulsewire API collection](postman/PulsewireAPI.postman_collection.json).
-2. Open the collection's **Variables** tab and set `baseUrl` to
-   `http://127.0.0.1:3000` without a trailing slash.
-3. With the application running, send `GET {{baseUrl}}/health`.
+1. Open the Pulsewire API collection in Postman. Its YAML files are in
+   [`postman/PulsewireAPI/`](postman/PulsewireAPI/).
+2. Select the **local development** environment. It sets `baseUrl` to
+   `http://127.0.0.1:3000`.
+3. With the application running, send `GET {{baseUrl}}/health` to check the
+   database connections.
+4. Send `POST {{baseUrl}}/auth/register` with the sample JSON body. Use an
+   unused email for each successful registration (`201 Created`). Reusing an
+   email returns `409 Conflict`.
 
-To target a different server or port, change `baseUrl` in the collection.
-For multiple servers, you can set `baseUrl` in each Postman environment and select
-the environment you want to use. Keep tokens and passwords out of committed exports.
+To target a different server or port, set `baseUrl` in the selected environment
+without a trailing slash. Keep tokens and passwords out of committed exports.
 
 ### PostgreSQL migrations
 
